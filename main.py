@@ -12,9 +12,11 @@ falling knives it would otherwise catch.
 Calibration note: the dip thresholds are set for this market's calmer
 one-minute bars (the dev window's sharpest 60-bar pullback from its high
 is 184 bps and its deepest 60-bar net fall is 134 bps, so v1d's 150 bp
-net-fall bar would never fire here): a pullback of at least 100 bps from
-the 60-bar high, a 60-bar net fall of at least 60 bps, and RSI(14) below
-40, with the reversal. The regime stays at the stricter -50 bps.
+net-fall bar would never fire here). v2 (sweep-best, chasing dev ~$20):
+a pullback of at least 20 bps from the 60-bar high, a 60-bar net fall of
+at least 10 bps, and RSI(14) below 60, with the reversal; up to four dip
+buys and no cooldown between exits (COOLDOWN 0). The regime stays at the
+stricter -50 bps.
 """
 
 import os
@@ -28,9 +30,9 @@ SYMBOL = "CBBTC"
 BPS = 10_000
 RSI_LEN = 14
 MAX_TRADES = 4
-MAX_DIP = 2
+MAX_DIP = 4
 MAX_REBOUND = 2
-COOLDOWN = 60
+COOLDOWN = 0
 MIN_CLOSES = 62
 LAST_ENTRY_SEQ = 1320
 SLIP_BPS = 200
@@ -140,16 +142,16 @@ class Trader:
     def dip_setup(self):
         if self.dip_n >= MAX_DIP:
             return None
-        if self.top_fall(60) < 100:
+        if self.top_fall(60) < 20:
             return None
         if self.top_fall(720) >= 550:
             return None
         r = self.rsi
-        if r[-1] is None or r[-2] is None or r[-1] >= 40:
+        if r[-1] is None or r[-2] is None or r[-1] >= 60:
             return None
         if self.closes[-1] <= self.closes[-2]:
             return None
-        if self.close_fall(60) < 60:
+        if self.close_fall(60) < 10:
             return None
         if len(self.closes) >= 361:
             regime = (self.closes[-1] - self.closes[-361]) * BPS // self.closes[-361]
